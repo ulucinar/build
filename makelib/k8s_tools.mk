@@ -44,9 +44,13 @@ OLMBUNDLE := $(TOOLS_HOST_DIR)/olm-bundle-$(OLMBUNDLE_VERSION)
 USE_HELM3 ?= false
 HELM3_VERSION ?= v3.5.3
 HELM3 := $(TOOLS_HOST_DIR)/helm-$(HELM3_VERSION)
+HELM_SYMLINK := $(TOOLS_HOST_DIR)/helm-sym
 
-# If we enable HELM3 we alias HELM to be HELM3
-ifeq ($(USE_HELM3),true)
+# If a Helm binary is specified with the HELM_PATH variable, use it.
+# If not specified and if we enable HELM3, we alias HELM to be HELM3.
+ifneq ($(strip $(HELM_PATH)),)
+HELM := $(HELM_SYMLINK)
+else ifeq ($(USE_HELM3),true)
 HELM_VERSION ?= $(HELM3_VERSION)
 HELM := $(HELM3)
 else
@@ -111,6 +115,7 @@ $(OLMBUNDLE):
 
 # helm download and install only if helm3 not enabled
 ifeq ($(USE_HELM3),false)
+ifeq ($(strip $(HELM_PATH)),)
 $(HELM):
 	@$(INFO) installing helm $(HOSTOS)-$(HOSTARCH)
 	@mkdir -p $(TOOLS_HOST_DIR)/tmp-helm
@@ -118,6 +123,7 @@ $(HELM):
 	@mv $(TOOLS_HOST_DIR)/tmp-helm/$(HOSTOS)-$(HOSTARCH)/helm $(HELM)
 	@rm -fr $(TOOLS_HOST_DIR)/tmp-helm
 	@$(OK) installing helm $(HOSTOS)-$(HOSTARCH)
+endif
 endif
 
 # helm3 download and install
@@ -128,3 +134,9 @@ $(HELM3):
 	@mv $(TOOLS_HOST_DIR)/tmp-helm3/$(HOSTOS)-$(HOSTARCH)/helm $(HELM3)
 	@rm -fr $(TOOLS_HOST_DIR)/tmp-helm3
 	@$(OK) installing helm3 $(HOSTOS)-$(HOSTARCH)
+
+# use the Helm binary specified with the HELM_PATH variable
+$(HELM_SYMLINK):
+	@echo Will use the Helm binary at: $(HELM_PATH)
+	rm -f "$@"
+	ln -s "$(HELM_PATH)" "$@"

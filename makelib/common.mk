@@ -106,8 +106,8 @@ HOSTARCH := $(shell uname -m)
 ifeq ($(HOSTARCH),x86_64)
 HOSTARCH := amd64
 endif
-ifneq ($(HOSTARCH),amd64)
-	$(error build only supported on amd64 host currently)
+ifneq (, $(filter, $(HOSTARCH),amd64,arm64))
+	$(error build only supported on amd64 or arm64 hosts currently)
 endif
 HOST_PLATFORM := $(HOSTOS)_$(HOSTARCH)
 

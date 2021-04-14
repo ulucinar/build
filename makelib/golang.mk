@@ -97,6 +97,12 @@ endif
 # linters.
 GOLANGCILINT_VERSION ?= 1.31.0
 GOLANGCILINT := $(TOOLS_HOST_DIR)/golangci-lint-v$(GOLANGCILINT_VERSION)
+GOLANGCILINT_SYMLINK := $(TOOLS_HOST_DIR)/golangci-lint-sym
+
+# If a golangci-lint binary is specified with the GOLANGCILINT_PATH variable, use it.
+ifneq ($(strip $(GOLANGCILINT_PATH)),)
+GOLANGCILINT := $(GOLANGCILINT_SYMLINK)
+endif
 
 GO_BIN_DIR := $(abspath $(OUTPUT_DIR)/bin)
 GO_OUT_DIR := $(GO_BIN_DIR)/$(PLATFORM)
@@ -333,6 +339,7 @@ $(DEP):
 	@rm -fr $(TOOLS_HOST_DIR)/tmp-dep
 	@$(OK) installing dep-$(DEP_VERSION) $(HOSTOS)-$(HOSTARCH)
 
+ifeq ($(strip $(GOLANGCILINT_PATH)),)
 $(GOLANGCILINT):
 	@$(INFO) installing golangci-lint-v$(GOLANGCILINT_VERSION) $(HOSTOS)-$(HOSTARCH)
 	@mkdir -p $(TOOLS_HOST_DIR)/tmp-golangci-lint || $(FAIL)
@@ -340,6 +347,7 @@ $(GOLANGCILINT):
 	@mv $(TOOLS_HOST_DIR)/tmp-golangci-lint/golangci-lint $(GOLANGCILINT) || $(FAIL)
 	@rm -fr $(TOOLS_HOST_DIR)/tmp-golangci-lint
 	@$(OK) installing golangci-lint-v$(GOLANGCILINT_VERSION) $(HOSTOS)-$(HOSTARCH)
+endif
 
 $(GOFMT):
 	@$(INFO) installing gofmt$(GOFMT_VERSION)
@@ -362,3 +370,9 @@ $(GOCOVER_COBERTURA):
 	@GO111MODULE=off GOPATH=$(TOOLS_HOST_DIR)/tmp-gocover-cobertura GOBIN=$(TOOLS_HOST_DIR) $(GOHOST) get github.com/t-yuki/gocover-cobertura || rm -fr $(TOOLS_HOST_DIR)/tmp-covcover-cobertura || $(FAIL)
 	@rm -fr $(TOOLS_HOST_DIR)/tmp-gocover-cobertura
 	@$(OK) installing gocover-cobertura
+
+# use the golangci-lint binary specified with the GOLANGCILINT_PATH variable
+$(GOLANGCILINT_SYMLINK):
+	@echo Will use the golangci-lint binary at: $(GOLANGCILINT_PATH)
+	rm -f "$@"
+	ln -s "$(GOLANGCILINT_PATH)" "$@"
